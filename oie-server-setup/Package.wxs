@@ -1,0 +1,31 @@
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Open Integration Engine Server" Manufacturer="Open Integration Engine" Version="1.0.0.0"
+           UpgradeCode="{84EFF4AC-E36D-4D17-A442-0CDF470DCC40}" Scope="perMachine">
+    <MajorUpgrade DowngradeErrorMessage="Uninstall the newer version before installing an older revision" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="CompanyFolder" Name="Open Integration Engine">
+        <Directory Id="INSTALLFOLDER" Name="Server">
+          <Directory Id="JRE" Name="jre" />
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+
+    <Component Directory="INSTALLFOLDER">
+      <File Name="oieserver.exe" Source="!(bindpath.oieserver)oieserver.exe" KeyPath="yes" />
+      <File Name="oieserver.config" Source="!(bindpath.oieserver)oieserver.exe.config" />
+
+      <ServiceInstall Id="oieservice" Type="ownProcess"
+                      Name="oie-service" DisplayName="Open Integration Engine"
+                      Description="Example"
+                      Start="auto" ErrorControl="normal" />
+      
+      <ServiceControl Id="oieservicecontrol" Name="oie-service" Stop="both" Remove="uninstall" Wait="yes" />
+    </Component>
+    <Files Directory="INSTALLFOLDER" Include="C:\Drop\oie_windows-x64_4_5_2\oie\**\*" />
+    <Files Directory="JRE" Include="C:\dev\zulu17.58.21-ca-jre17.0.15-win_x64\**\*" />
+    
+    
+  </Package>
+</Wix>

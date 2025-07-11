@@ -1,0 +1,15 @@
+﻿CreateProcessW
+AssignProcessToJobObject
+ResumeThread
+WaitForSingleObject
+GetExitCodeProcess
+CloseHandle
+TerminateProcess
+GetStdHandle
+SetInformationJobObject
+CreateJobObject
+JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+GenerateConsoleCtrlEvent
+AttachConsole
+FreeConsole
+SetConsoleCtrlHandler
