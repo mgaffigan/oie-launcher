@@ -51,51 +51,47 @@ namespace OpenIntegrationEngine.ServerLauncher
         }
 
         public static unsafe ProcessInfoHandle StartProcessSuspended(
-            string applicationName, string commandLine, string? workingDirectory, 
+            string applicationName, string commandLine, string? workingDirectory,
             AnonymousPipeServerStream stdout, AnonymousPipeServerStream stderr)
         {
-            fixed (char* mutableCommandLine = (commandLine + '\0').ToCharArray())
+            var mutableCommandLine = (commandLine + '\0').ToCharArray().AsSpan();
+            var startupInfo = new STARTUPINFOW();
+            startupInfo.cb = (uint)Marshal.SizeOf(startupInfo);
+            startupInfo.dwFlags = STARTUPINFOW_FLAGS.STARTF_USESTDHANDLES;
+            startupInfo.hStdInput = HANDLE.Null;
+            startupInfo.hStdOutput = (HANDLE)stdout.ClientSafePipeHandle.DangerousGetHandle();
+            startupInfo.hStdError = (HANDLE)stderr.ClientSafePipeHandle.DangerousGetHandle();
+
+            if (!CreateProcess(applicationName, ref mutableCommandLine, lpProcessAttributes: null,
+                lpThreadAttributes: null, bInheritHandles: true,
+                0,
+                lpEnvironment: null, workingDirectory, startupInfo, out var processInfo))
             {
-                var startupInfo = new STARTUPINFOW();
-                startupInfo.cb = (uint)Marshal.SizeOf(startupInfo);
-                startupInfo.dwFlags = STARTUPINFOW_FLAGS.STARTF_USESTDHANDLES;
-                startupInfo.hStdInput = HANDLE.Null;
-                startupInfo.hStdOutput = (HANDLE)stdout.ClientSafePipeHandle.DangerousGetHandle();
-                startupInfo.hStdError = (HANDLE)stderr.ClientSafePipeHandle.DangerousGetHandle();
-
-                if (!CreateProcess(applicationName, mutableCommandLine, lpProcessAttributes: null,
-                    lpThreadAttributes: null, bInheritHandles: true, 
-                    0,
-                    lpEnvironment: null, workingDirectory, startupInfo, out var processInfo))
-                {
-                    throw new Win32Exception("Failed to create child process");
-                }
-
-                return new(processInfo);
+                throw new Win32Exception("Failed to create child process");
             }
+
+            return new(processInfo);
         }
 
         private static unsafe ProcessInfoHandle StartProcessSuspended(string applicationName,
             string commandLine, string? workingDirectory)
         {
-            fixed (char* mutableCommandLine = (commandLine + '\0').ToCharArray())
+            var mutableCommandLine = (commandLine + '\0').ToCharArray().AsSpan();
+            var startupInfo = new STARTUPINFOW();
+            startupInfo.cb = (uint)Marshal.SizeOf(startupInfo);
+            startupInfo.dwFlags = STARTUPINFOW_FLAGS.STARTF_USESTDHANDLES;
+            startupInfo.hStdInput = GetStdHandle(STD_HANDLE.STD_INPUT_HANDLE);
+            startupInfo.hStdOutput = GetStdHandle(STD_HANDLE.STD_OUTPUT_HANDLE);
+            startupInfo.hStdError = GetStdHandle(STD_HANDLE.STD_ERROR_HANDLE);
+
+            if (!CreateProcess(applicationName, ref mutableCommandLine, lpProcessAttributes: null,
+                lpThreadAttributes: null, bInheritHandles: true, PROCESS_CREATION_FLAGS.CREATE_SUSPENDED,
+                lpEnvironment: null, workingDirectory, startupInfo, out var processInfo))
             {
-                var startupInfo = new STARTUPINFOW();
-                startupInfo.cb = (uint)Marshal.SizeOf(startupInfo);
-                startupInfo.dwFlags = STARTUPINFOW_FLAGS.STARTF_USESTDHANDLES;
-                startupInfo.hStdInput = GetStdHandle(STD_HANDLE.STD_INPUT_HANDLE);
-                startupInfo.hStdOutput = GetStdHandle(STD_HANDLE.STD_OUTPUT_HANDLE);
-                startupInfo.hStdError = GetStdHandle(STD_HANDLE.STD_ERROR_HANDLE);
-
-                if (!CreateProcess(applicationName, mutableCommandLine, lpProcessAttributes: null,
-                    lpThreadAttributes: null, bInheritHandles: true, PROCESS_CREATION_FLAGS.CREATE_SUSPENDED,
-                    lpEnvironment: null, workingDirectory, startupInfo, out var processInfo))
-                {
-                    throw new Win32Exception("Failed to create child process");
-                }
-
-                return new(processInfo);
+                throw new Win32Exception("Failed to create child process");
             }
+
+            return new(processInfo);
         }
     }
 
